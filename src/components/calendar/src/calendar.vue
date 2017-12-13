@@ -2,9 +2,9 @@
 	<section>
 		<div class="calendar">
 			<div class="calendar-month">
-				<span class="month-left"  @click="handlePrev"><i>&lt;</i></span>
+				<span class="month-left"  @click="handlePrev"><i v-show="isMonthPrev">&lt;</i></span>
 				<strong>{{currentMonth}}</strong>
-				<span class="month-right" @click="handleNext"><i>&gt;</i></span>
+				<span class="month-right" @click="handleNext"><i v-show="isMonthNext">&gt;</i></span>
 			</div>
 			<table class="calendar-table">
 				<thead class="calendar-week">
@@ -15,8 +15,10 @@
 						<td 
 							v-for="cell in row" 
 							:class="getClasses(cell)" 
-							@click="selectedDate(cell)">
+							@click.stop="handleDayClick(cell)">
 							<span>{{cell.text}}</span>
+							<span v-if="cell.event && cell.event.stock">余{{cell.event.stock}}</span>
+							<span v-if="cell.event && cell.event.price" class="calendar-price">￥{{cell.event.price}}起</span>
 						</td>
 					</tr>
 				</tbody>
@@ -35,11 +37,15 @@
         type: Number,
         // validator: val => val >= 1 && val <= 7
 			},
-			value: {},
-			showWeekNumber: {
-        type: Boolean,
-        default: false
-      },
+			selectedDay: {
+				type: String,
+			},
+			events: {
+				type: Array,
+				default: () => {
+					return []
+				},
+			}
 		},
 		computed: {
 			currentMonth() {
@@ -74,12 +80,14 @@
 					for(let j = 0; j < 7; j++) {
 						let cell = row[j];
 						if(!cell) {
-							cell = { row: i, column: j, type: 'normal', inRange: false, start: false, end: false}
+							cell = { row: i, column: j, type: 'normal', inRange: false, start: false, end: false, isSelected: false}
 						}
-						cell.type = 'normal';
+						cell.event = {}
+						cell.isSelected = false;
 						const index = i * 7 + j;
 						if(i >= 0 && i <= 1 ) {
 							if(index >= offset) {
+								cell.type = 'normal';
 								cell.text = count++;
 								month = this.month;
 							} else {
@@ -89,6 +97,7 @@
 							}
 						} else {
 							if(count <= dateCountOfMonth) {
+								cell.type = 'normal';
 								cell.text = count++;
 								month = this.month;
 							} else {
@@ -100,78 +109,126 @@
 						if(isSameDate(new Date(), new Date(this.year, month, cell.text))) {
 							cell.type = 'today'
 						}
+						if(isSameDate(new Date(this.selectedDay), new Date(this.year, month, cell.text))) {
+							cell.isSelected = true
+						}
 						cell.date = moment(new Date(this.year, month, cell.text)).format('YYYY-MM-DD');
+						this.events.filter(event => {
+							if(isSameDate(new Date(event.date), new Date(this.year, month, cell.text))) {
+								cell.event = event;
+							}
+						})
 						this.$set(row, j, cell);
 					}
 				}
 				return rows;
-			}
+			},
+			dateRange() {
+				// let startDate = this.events[0].date,
+				return {
+					startDate: this.events[0].date,
+					endDate: this.events[this.events.length - 1].date,
+				}
+			},
+			isMonthPrev() {
+				return this.year > new Date(this.dateRange.startDate).getFullYear() || 
+				(this.year === new Date(this.dateRange.startDate).getFullYear() && 
+					this.month > new Date(this.dateRange.startDate).getMonth())
+			},
+			isMonthNext() {
+				return this.year < new Date(this.dateRange.endDate).getFullYear() || 
+							 (this.year === new Date(this.dateRange.endDate).getFullYear() &&
+							 	this.month < new Date(this.dateRange.endDate).getMonth())
+			},
 		},
 		data() {
 			return {
 				tableRows: [ [], [], [], [], [], [] ],
 				locale: 'zh-cn',
-				currMonth: '',
-				currDate: '', 
-				day: '',
-				date: new Date(2018,-1,1),
+				date: new Date(),
 			}
 		},
 		methods: {
-			selectedDate(cell) {
-				console.log(cell.date)
-			},
-			handleNext () {
-				this.date = nextMonth(this.date)
+			handleDayClick(cell) {
+				console.log(this.selectedDay)
+				this.$emit('dayClick', cell)
 			},
 			handlePrev() {
-				this.date = prevMonth(this.date)
+				if(this.isMonthPrev) {
+					this.date = prevMonth(this.date)
+				}
+			},
+			handleNext() {
+				if(this.isMonthNext) {
+					this.date = nextMonth(this.date)
+				}
 			},
 			getClasses(cell) {
 				let classes = [];
 				if(cell.type === 'normal') {
-					classes.push('available')
 					if(cell.type === 'today') {
 						classes.push('today')
 					}
+					classes.push('current')
 				} else {
 					classes.push(cell.type)
 				}
-				return classes;
-			}
+				if(cell.event && JSON.stringify(cell.event) === '{}') {
+					classes.push('disabled')
+				} else {
+					classes.push('available')
+				}
+				if(cell.isSelected) {
+					classes.push('selected')
+				}
+				return classes.join(' ');
+			},
 		},
 		mounted() {
-			console.log(this.day)
+			this.date = new Date(this.events[0].date);
+			// this.getDateRange()
 		}
 	}
 </script>
 <style scoped lang="scss">
 	.calendar {
 		.calendar-month {
-			display: flex;
-			justify-content: space-between;
 			height: 30px;
 			line-height: 30px;
+			text-align: center;
 			background: #ccc;
+			overflow: hidden;
 			strong {
 				font-weight: normal;
 			}
 			span[class^="month-"] {
 				display: inline-block;
 				width: 30px;
+				height: 30px;
 				text-align: center;
 				font-size: 20px;
 				cursor: pointer;
+				&.month-left {
+					float: left;
+				}
+				&.month-right {
+					float: right;
+				}
 				i {
-					font-family: 'Microsoft Yahei';
+					font-family: sans-serif;
 					font-style: normal;
+					font-weight: bold;
 				}
 			}
 		}
 		.calendar-table {
 			width: 100%;
-			border-collapse: collapse;
 			border-spacing: 0;
+			border-collapse: collapse;
+			table-layout: fixed;
+			font-size: 13px;
+			color: #444;
+			font-family: 'Microsoft Yahei';
 			.calendar-week {
 				width: 100%;
 				th {
@@ -184,20 +241,35 @@
 				}
 			}
 			td {
-				padding: 15px;
+				height: 48px;
 				border-top: 1px solid #ccc;
 				border-right: 1px solid #ccc;
-				text-align: center;
+				text-align: left;
+				vertical-align: top;
 				color: #999;
-				&:hover {
-					background: #f0f0f0;
+				span {
+					display: block;
 				}
 				&.available {
-					color: #333;
+					cursor: pointer;
+					&:hover {
+						background: #f0f0f0;
+					}
 				}
 				&.today {
 					color: #409EFF;
 					background: #f3f3f3;
+				}
+				&.current {
+					color: #333;
+				}
+				&.selected {
+					color: #fff;
+					background: #f60;
+					&:hover {
+						color: #fff;
+						background: #f60;
+					}
 				}
 			}
 		}
