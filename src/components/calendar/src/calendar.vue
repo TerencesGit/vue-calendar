@@ -35,7 +35,7 @@
 			firstDayOfWeek: {
 				default: 7,
         type: Number,
-        // validator: val => val >= 1 && val <= 7
+        validator: val => val >= 1 && val <= 7
 			},
 			selectedDay: {
 				type: String,
@@ -49,7 +49,8 @@
 		},
 		computed: {
 			currentMonth() {
-				return moment(this.date).locale(this.locale).format('YYYY MMMM')
+				return this.date.getFullYear() + '年' + (this.date.getMonth() + 1) + '月';
+				// return moment(this.date).locale(this.locale).format('YYYY MMMM')
 			},
 			year() {
 				return this.date.getFullYear();
@@ -62,21 +63,14 @@
 			},
 			rows() {
 				const date = this.date;
-				// let day = getFirstDayOfMonth(date);
 				const offset = getFirstDayOfMonth(date);
 				const dateCountOfMonth = getDayCountOfMonth(date);
 				const dateCountOfLastMonth = getDayCountOfMonth(prevMonth(date));
 				const rows = this.tableRows;
 				let count = 1 - offset;
 				let month;
-				// let firstDayPosition;
-				// const startDate = this.startDate;
-				// const disabledDate = this.disabledDate;
 				for(let i = 0; i < 6; i++) {
 					const row = rows[i];
-					// if(!row[0]){
-					// 	row[0] = { type: 'week', text: getWeekNumber(nextDate(startDate, i * 7 + 1)) }
-					// }
 					for(let j = 0; j < 7; j++) {
 						let cell = row[j];
 						if(!cell) {
@@ -124,7 +118,6 @@
 				return rows;
 			},
 			dateRange() {
-				// let startDate = this.events[0].date,
 				return {
 					startDate: this.events[0].date,
 					endDate: this.events[this.events.length - 1].date,
@@ -150,7 +143,6 @@
 		},
 		methods: {
 			handleDayClick(cell) {
-				console.log(this.selectedDay)
 				this.$emit('dayClick', cell)
 			},
 			handlePrev() {
@@ -186,7 +178,6 @@
 		},
 		mounted() {
 			this.date = new Date(this.events[0].date);
-			// this.getDateRange()
 		}
 	}
 </script>

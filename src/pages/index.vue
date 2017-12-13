@@ -63,9 +63,8 @@
 			dayClick(e) {
 				if(JSON.stringify(e.event) !== '{}'){
 					this.selectedDay = e.date;
+					console.log(this.selectedDay)
 				}
-				console.log(e)
-				console.log(this.selectedDay)
 			}
 		}
 	}
