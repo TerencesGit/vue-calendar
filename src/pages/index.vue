@@ -32,12 +32,12 @@
 				selectedDay: '',
 				data: [
 					{
-						date: '2017-11-16',
+						date: '2017-12-16',
 						price: 1989,
 						stock: 100
 					},
 					{
-						date: '2017-11-17',
+						date: '2017-12-17',
 						price: 1899,
 						stock: 99
 					},

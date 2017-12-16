@@ -33,9 +33,9 @@
 		name: 'Calendar',
 		props: {
 			firstDayOfWeek: {
-				default: 7,
+				default: 0,
         type: Number,
-        validator: val => val >= 1 && val <= 7
+        validator: val => val >= 0 && val <= 6
 			},
 			selectedDay: {
 				type: String,
@@ -59,7 +59,7 @@
 				return this.date.getMonth();
 			},
 			WEEKS() {
-				return ['日', '一', '二', '三', '四', '五', '六'];
+				return ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 			},
 			rows() {
 				const date = this.date;
