@@ -3,10 +3,10 @@
 		<h1>vue-calendar</h1>
 		<div class="calendar-wrap">
 			<Calendar 
-				:events="data"
+				:events="events"
+				:firstDayOfWeek="0"
 				:selectedDay="selectedDay"
 				@dayClick="dayClick">
-				
 			</Calendar>
 		</div>
 	</section>
@@ -30,7 +30,8 @@
 		data() {
 			return {
 				selectedDay: '',
-				data: [
+				// events: [],
+				events: [
 					{
 						date: '2017-12-16',
 						price: 1989,
@@ -61,11 +62,17 @@
 		},
 		methods: {
 			dayClick(e) {
+				console.log(e)
 				if(JSON.stringify(e.event) !== '{}'){
 					this.selectedDay = e.date;
 					console.log(this.selectedDay)
 				}
 			}
+		},
+		mounted() {
+			console.log(this.events.map(e => e.date).sort((a,b) => {
+				return a < b;
+			}))
 		}
 	}
 </script>

@@ -29,6 +29,7 @@
 <script>
 	import moment from 'moment'
 	import { nextMonth, prevMonth, getFirstDayOfMonth, getDayCountOfMonth, isSameDate } from './util'
+	const WEEKS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 	export default {
 		name: 'Calendar',
 		props: {
@@ -59,11 +60,20 @@
 				return this.date.getMonth();
 			},
 			WEEKS() {
-				return ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+				const week = this.firstDayOfWeek;
+        return WEEKS.concat(WEEKS).slice(week, week + 7);
 			},
+			offsetDay() {
+        const week = this.firstDayOfWeek;
+        return week > 4 ? 7 - week : -week;
+      },
 			rows() {
 				const date = this.date;
-				const offset = getFirstDayOfMonth(date);
+				let day = getFirstDayOfMonth(date);
+				console.log(day)
+				const offset = day + this.offsetDay;
+				console.log(offset)
+				console.log(this.offsetDay)
 				const dateCountOfMonth = getDayCountOfMonth(date);
 				const dateCountOfLastMonth = getDayCountOfMonth(prevMonth(date));
 				const rows = this.tableRows;
@@ -74,7 +84,7 @@
 					for(let j = 0; j < 7; j++) {
 						let cell = row[j];
 						if(!cell) {
-							cell = { row: i, column: j, type: 'normal', inRange: false, start: false, end: false, isSelected: false}
+							cell = { row: i, column: j, type: 'normal', inRange: false, start: false, end: false, isSelected: false }
 						}
 						cell.event = {}
 						cell.isSelected = false;
@@ -119,16 +129,18 @@
 			},
 			dateRange() {
 				return {
-					startDate: this.events[0].date,
-					endDate: this.events[this.events.length - 1].date,
+					startDate: this.events[0] && this.events[0].date,
+					endDate: this.events[0] && this.events[this.events.length - 1].date,
 				}
 			},
 			isMonthPrev() {
+				if(!this.events[0])return true;
 				return this.year > new Date(this.dateRange.startDate).getFullYear() || 
 				(this.year === new Date(this.dateRange.startDate).getFullYear() && 
 					this.month > new Date(this.dateRange.startDate).getMonth())
 			},
 			isMonthNext() {
+				if(!this.events[0])return true;
 				return this.year < new Date(this.dateRange.endDate).getFullYear() || 
 							 (this.year === new Date(this.dateRange.endDate).getFullYear() &&
 							 	this.month < new Date(this.dateRange.endDate).getMonth())
@@ -177,7 +189,7 @@
 			},
 		},
 		mounted() {
-			this.date = new Date(this.events[0].date);
+			this.date = this.events[0] ? new Date(this.events[0].date) : new Date()
 		}
 	}
 </script>
