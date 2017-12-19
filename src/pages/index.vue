@@ -1,9 +1,9 @@
 <template>
 	<section>
 		<h1>vue-calendar</h1>
+		<date-picker class="date-picker" :placeholder="placeholder"></date-picker>
 		<div class="calendar-wrap">
 			<Calendar 
-				:events="events"
 				:firstDayOfWeek="0"
 				:selectedDay="selectedDay"
 				@dayClick="dayClick">
@@ -23,6 +23,9 @@
 		width: 600px;
 		margin: auto;
 		border: 1px solid #ccc;
+	}
+	.date-picker {
+		text-align: center;
 	}
 </style>
 <script>
@@ -57,7 +60,8 @@
 						price: 1899,
 						stock: 99
 					},
-				]
+				],
+				placeholder: '请选择日期'
 			}
 		},
 		methods: {

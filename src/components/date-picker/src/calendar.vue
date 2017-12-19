@@ -49,6 +49,10 @@
 				default: () => {
 					return []
 				},
+			},
+			show: {
+				type: Boolean,
+				default: false,
 			}
 		},
 		computed: {

@@ -5,8 +5,10 @@ import App from './App'
 import Router from 'vue-router'
 import routes from './router'
 import Calendar from './components/calendar'
+import DatePicker from './components/date-picker'
 Vue.use(Router)
 Vue.use(Calendar)
+Vue.use(DatePicker)
 Vue.config.productionTip = false
 const router = new Router({
 	routes
