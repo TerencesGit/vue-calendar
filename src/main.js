@@ -4,11 +4,13 @@ import Vue from 'vue'
 import App from './App'
 import Router from 'vue-router'
 import routes from './router'
-import Calendar from './components/calendar'
+import axios from 'axios'
+import PriceCalendar from './components/calendar'
 import DatePicker from './components/date-picker'
 Vue.use(Router)
-Vue.use(Calendar)
+Vue.use(PriceCalendar)
 Vue.use(DatePicker)
+Vue.prototype.$http = axios;
 Vue.config.productionTip = false
 const router = new Router({
 	routes

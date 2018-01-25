@@ -1,33 +1,31 @@
 <template>
-	<section>
-		<div class="calendar">
-			<div class="calendar-month">
-				<span class="month-left"  @click="handlePrev"><i v-show="isMonthPrev">&lt;</i></span>
-				<strong>
-					<!-- {{currentMonth}} -->
-					{{this.year}} 年 {{this.month + 1}} 月
-				</strong>
-				<span class="month-right" @click="handleNext"><i v-show="isMonthNext">&gt;</i></span>
-			</div>
-			<table class="calendar-table">
-				<thead class="calendar-week">
-					<th v-for="week in WEEKS">{{week}}</th>
-				</thead>
-				<tbody class="calendar-body">
-					<tr v-for="row in rows">
-						<td 
-							v-for="cell in row" 
-							:class="getClasses(cell)" 
-							@click.stop="handleDayClick(cell)">
-							<span>{{cell.text}}</span>
-							<span v-if="cell.event && cell.event.stock">余{{cell.event.stock}}</span>
-							<span v-if="cell.event && cell.event.price" class="calendar-price">￥{{cell.event.price}}起</span>
-						</td>
-					</tr>
-				</tbody>
-			</table>
+	<div v-if="visible" class="calendar">
+		<div class="calendar-month">
+			<span class="month-left"  @click="handlePrev"><i v-show="isMonthPrev">&lt;</i></span>
+			<strong>
+				<!-- {{currentMonth}} -->
+				{{this.year}} 年 {{this.month + 1}} 月
+			</strong>
+			<span class="month-right" @click="handleNext"><i v-show="isMonthNext">&gt;</i></span>
 		</div>
-	</section>
+		<table class="calendar-table">
+			<thead class="calendar-week">
+				<th v-for="week in WEEKS">{{week}}</th>
+			</thead>
+			<tbody class="calendar-body">
+				<tr v-for="row in rows">
+					<td 
+						v-for="cell in row" 
+						:class="getClasses(cell)" 
+						@click.stop="handleDayClick(cell)">
+						<span>{{cell.text}}</span>
+						<span v-if="cell.event && cell.event.stock">余{{cell.event.stock}}</span>
+						<span v-if="cell.event && cell.event.price" class="calendar-price">￥{{cell.event.price}}起</span>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
 </template>
 <script>
 	import moment from 'moment'
@@ -50,7 +48,7 @@
 					return []
 				},
 			},
-			show: {
+			visible: {
 				type: Boolean,
 				default: false,
 			}
@@ -200,6 +198,7 @@
 </script>
 <style scoped lang="scss">
 	.calendar {
+		width: 260px;
 		.calendar-month {
 			height: 30px;
 			line-height: 30px;
@@ -237,6 +236,7 @@
 			font-size: 13px;
 			color: #444;
 			font-family: 'Microsoft Yahei';
+			border: 1px solid #ccc;
 			.calendar-week {
 				width: 100%;
 				th {
@@ -249,7 +249,7 @@
 				}
 			}
 			td {
-				height: 48px;
+				height: 30px;
 				border-top: 1px solid #ccc;
 				border-right: 1px solid #ccc;
 				text-align: left;

@@ -36,3 +36,10 @@ export const isSameDate = (date1, date2) => {
 	return date1.getFullYear() === date2.getFullYear() && 
 	date1.getMonth() === date2.getMonth() && date1.getDate() === date2.getDate();
 }
+export const filled = (n) => {
+	return String(n).replace(/^(\d)$/, '0$1'); 
+}
+export const formatDate = (date) => {
+	date = new Date(date);
+	return date.getFullYear() + '-' + filled(date.getMonth()+1) + '-' + filled(date.getDate());
+}

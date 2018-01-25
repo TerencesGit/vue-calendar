@@ -1,15 +1,14 @@
 <template>
 	<section>
-		<div class="calendar">
+		<div class="price-calendar">
 			<div class="calendar-month">
-				<span class="month-left"  @click="handlePrev"><i v-show="isMonthPrev">&lt;</i></span>
+				<span class="month-prev" @click="handlePrev"><i>&lt;</i></span>
 				<strong>
-					<!-- {{currentMonth}} -->
 					{{this.year}} 年 {{this.month + 1}} 月
 				</strong>
-				<span class="month-right" @click="handleNext"><i v-show="isMonthNext">&gt;</i></span>
+				<span class="month-next" @click="handleNext"><i>&gt;</i></span>
 			</div>
-			<table class="calendar-table">
+			<table cellspacing="0" class="calendar-table">
 				<thead class="calendar-week">
 					<th v-for="week in WEEKS">{{week}}</th>
 				</thead>
@@ -19,9 +18,9 @@
 							v-for="cell in row" 
 							:class="getClasses(cell)" 
 							@click.stop="handleDayClick(cell)">
-							<span>{{cell.text}}</span>
-							<span v-if="cell.event && cell.event.stock">余{{cell.event.stock}}</span>
-							<span v-if="cell.event && cell.event.price" class="calendar-price">￥{{cell.event.price}}起</span>
+							<span class="day">{{cell.text}}</span>
+							<span v-if="cell.data.skuStock" class="stock-status">{{cell.stockStatus}}</span>
+							<span v-if="cell.data.adultPrice" class="price">￥{{cell.data.adultPrice}}起</span>
 						</td>
 					</tr>
 				</tbody>
@@ -30,11 +29,10 @@
 	</section>
 </template>
 <script>
-	import moment from 'moment'
-	import { nextMonth, prevMonth, getFirstDayOfMonth, getDayCountOfMonth, isSameDate } from './util'
-	const WEEKS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+	import { nextMonth, prevMonth, getFirstDayOfMonth, getDayCountOfMonth, isSameDate, filled, formatDate } from './util'
+	const WEEKS = ['日', '一', '二', '三', '四', '五', '六'];
 	export default {
-		name: 'Calendar',
+		name: 'priceCalendar',
 		props: {
 			firstDayOfWeek: {
 				default: 0,
@@ -42,9 +40,9 @@
         validator: val => val >= 0 && val <= 6
 			},
 			selectedDay: {
-				type: String,
+				type: String, 
 			},
-			events: {
+			data: {
 				type: Array,
 				default: () => {
 					return []
@@ -52,10 +50,6 @@
 			}
 		},
 		computed: {
-			currentMonth() {
-				return this.date.getFullYear() + '年' + (this.date.getMonth() + 1) + '月';
-				// return moment(this.date).locale(this.locale).format('YYYY MMMM')
-			},
 			year() {
 				return this.date.getFullYear();
 			},
@@ -74,77 +68,70 @@
 				const date = this.date;
 				let day = getFirstDayOfMonth(date);
 				const offset = (day + this.offsetDay) > 0 ? day + this.offsetDay : day + this.offsetDay + 7;
-				// console.log(day, this.offsetDay, offset)
 				const dateCountOfMonth = getDayCountOfMonth(date);
 				const dateCountOfLastMonth = getDayCountOfMonth(prevMonth(date));
 				const rows = this.tableRows;
 				let count = 1 - offset;
-				let month;
+				let year, month;
 				for(let i = 0; i < 6; i++) {
 					const row = rows[i];
 					for(let j = 0; j < 7; j++) {
 						let cell = row[j];
-						if(!cell) {
-							cell = { row: i, column: j, type: 'normal', inRange: false, start: false, end: false, isSelected: false }
-						}
-						cell.event = {}
-						cell.isSelected = false;
+						cell = { row: i, column: j, type: 'normal', isSelected: false, classes: [], stockStatus: '', data: {} };
 						const index = i * 7 + j;
 						if(i >= 0 && i <= 1 ) {
 							if(index >= offset) {
 								cell.type = 'normal';
 								cell.text = count++;
 								month = this.month;
+								year = this.year;
 							} else {
 								cell.text = count++ + dateCountOfLastMonth;
-								cell.type = 'prev-month';
-								month = this.month - 1;
+								cell.classes.push('prev-month')
+								month = this.month === 0 ? 11 : this.month - 1;
+								year = this.month === 0 ? this.year - 1 : this.year;
 							}
 						} else {
 							if(count <= dateCountOfMonth) {
 								cell.type = 'normal';
 								cell.text = count++;
 								month = this.month;
+								year = this.year;
 							} else {
 								cell.text = count++ - dateCountOfMonth;
-								cell.type = 'next-month';
-								month = this.month + 1;
+								cell.classes.push('next-month')
+								month = this.month === 11 ? 0 : this.month + 1;
+								year = this.month === 11 ? this.year + 1 : this.year;
 							}
 						}
-						if(isSameDate(new Date(), new Date(this.year, month, cell.text))) {
-							cell.type = 'today'
+						cell.date = formatDate(year + '-'+ (month + 1) + '-'+ cell.text);
+						if(isSameDate(new Date(this.selectedDay), new Date(year, month, cell.text))) {
+							cell.isSelected = true;
+							cell.classes.push('selected')
 						}
-						if(isSameDate(new Date(this.selectedDay), new Date(this.year, month, cell.text))) {
-							cell.isSelected = true
-						}
-						cell.date = moment(new Date(this.year, month, cell.text)).format('YYYY-MM-DD');
-						this.events.filter(event => {
-							if(isSameDate(new Date(event.date), new Date(this.year, month, cell.text))) {
-								cell.event = event;
-							}
-						})
 						this.$set(row, j, cell);
 					}
 				}
+				this.data.length !== 0 && this.renderData(rows)
 				return rows;
 			},
 			dateRange() {
 				return {
-					startDate: this.events[0] && this.events[0].date,
-					endDate: this.events[0] && this.events[this.events.length - 1].date,
+					startDate: this.data[0] && this.data[0].date,
+					endDate: this.data[0] && this.data[this.data.length - 1].date,
 				}
 			},
 			isMonthPrev() {
-				if(!this.events[0])return true;
-				return this.year > new Date(this.dateRange.startDate).getFullYear() || 
-				(this.year === new Date(this.dateRange.startDate).getFullYear() && 
-					this.month > new Date(this.dateRange.startDate).getMonth())
+				if(!this.data[0]) return true;
+				return this.year > new Date().getFullYear() || 
+				(this.year === new Date().getFullYear() && 
+					this.month > new Date().getMonth())
 			},
 			isMonthNext() {
-				if(!this.events[0])return true;
-				return this.year < new Date(this.dateRange.endDate).getFullYear() || 
-							 (this.year === new Date(this.dateRange.endDate).getFullYear() &&
-							 	this.month < new Date(this.dateRange.endDate).getMonth())
+				if(!this.data[0])return true;
+				return this.year < new Date(this.data[this.data.length - 1].skuDate).getFullYear() || 
+							 (this.year === new Date(this.data[this.data.length - 1].skuDate).getFullYear() &&
+							 	this.month < new Date(this.data[this.data.length - 1].skuDate).getMonth())
 			},
 		},
 		data() {
@@ -156,69 +143,86 @@
 		},
 		methods: {
 			handleDayClick(cell) {
-				this.$emit('dayClick', cell)
+				let isClick = cell && cell.data && cell.data.skuStock && cell.data.skuStock.storageNum;
+				if(isClick) {
+					this.$emit('dayClick', cell)
+				}
 			},
 			handlePrev() {
 				if(this.isMonthPrev) {
 					this.date = prevMonth(this.date)
+					this.$emit('prevMonth', this.date)
 				}
 			},
 			handleNext() {
 				if(this.isMonthNext) {
 					this.date = nextMonth(this.date)
+					this.$emit('nextMonth', this.date)
 				}
 			},
 			getClasses(cell) {
-				let classes = [];
-				if(cell.type === 'normal') {
-					if(cell.type === 'today') {
-						classes.push('today')
-					}
-					classes.push('current')
-				} else {
-					classes.push(cell.type)
-				}
-				if(cell.event && JSON.stringify(cell.event) === '{}') {
-					classes.push('disabled')
-				} else {
-					classes.push('available')
-				}
-				if(cell.isSelected) {
-					classes.push('selected')
-				}
-				return classes.join(' ');
+				return cell.classes.join(' ');
 			},
+			renderData(rows) {
+				for(let i = 0; i < rows.length; i++) {
+					let row = rows[i];
+					for(let j = 0; j < row.length; j++) {
+						let cell = row[j];
+						for(let k = 0; k < this.data.length; k++) {
+							let _data = this.data[k];
+							if(isSameDate(new Date(cell.date), new Date(_data.skuDate))) {
+								if(_data.skuStock) {
+										if(_data.skuStock.storageNum === 0) {
+											cell.classes.push('disabled')
+											cell.stockStatus = '售罄'
+										} else {
+											cell.classes.push('active')
+											if(_data.skuStock.storageNum > 5) {
+												cell.stockStatus = '充足'
+												cell.classes.push('more')
+											} else {
+												cell.stockStatus = '紧张'
+												cell.classes.push('less')
+											}
+										}
+								}
+								cell.data = _data;
+								// this.data.splice(k,1)
+								break;
+							}
+						}
+					}
+				}
+			}
 		},
 		mounted() {
-			this.date = this.events[0] ? new Date(this.events[0].date) : new Date()
+			this.date = new Date()
 		}
 	}
 </script>
 <style scoped lang="scss">
-	.calendar {
+	.price-calendar {
+		border: 1px solid #ccc;
 		.calendar-month {
+			display: flex;
+			justify-content: space-between;
 			height: 30px;
 			line-height: 30px;
 			text-align: center;
-			background: #ccc;
+			color: #fff;
+			background: #c60c1a;
 			overflow: hidden;
 			strong {
 				font-weight: normal;
 			}
 			span[class^="month-"] {
-				display: inline-block;
+				display: block;
 				width: 30px;
 				height: 30px;
-				text-align: center;
 				font-size: 20px;
-				cursor: pointer;
-				&.month-left {
-					float: left;
-				}
-				&.month-right {
-					float: right;
-				}
 				i {
+					display: block;
+					cursor: pointer;
 					font-family: sans-serif;
 					font-style: normal;
 					font-weight: bold;
@@ -238,42 +242,49 @@
 				th {
 					padding: 5px;
 					text-align: center;
-					border-right: 1px solid #ccc;
-					&:last-child {
-						border-right: none;
-					}
+					font-weight: normal;
 				}
 			}
 			td {
-				height: 48px;
+				height: 50px;
+				padding-left: 3px;
 				border-top: 1px solid #ccc;
 				border-right: 1px solid #ccc;
 				text-align: left;
+				font-size: 12px;
 				vertical-align: top;
-				color: #999;
 				span {
 					display: block;
+					overflow: hidden;
+					white-space: nowrap;
+					text-overflow: ellipsis;
 				}
-				&.available {
+				&.prev-month, &.next-month {
+					.day {
+						color: #b0b0b0;
+					}
+				}
+				&.disabled {
+					cursor: not-allowed;
+				}
+				&.more {
+					.stock-status {
+						color: #3DB7EC
+					}
+				}
+				&.less {
+					.stock-status {
+						color: #c60c1a
+					}
+				}
+				&.active {
 					cursor: pointer;
 					&:hover {
 						background: #f0f0f0;
 					}
 				}
-				&.today {
-					color: #409EFF;
-					background: #f3f3f3;
-				}
-				&.current {
-					color: #333;
-				}
 				&.selected {
-					color: #fff;
-					background: #f60;
-					&:hover {
-						color: #fff;
-						background: #f60;
-					}
+					background: #f0f0f0;
 				}
 			}
 		}

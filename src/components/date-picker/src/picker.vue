@@ -1,11 +1,14 @@
 <template>
-	<div class="input-picker">
-		<input 
-			type="text" 
-			class="input-inner" 
-			:placeholder="placeholder" 
-			@click="handleClick">
-	</div>
+	<section>
+		<div class="input-picker">
+			<input 
+				type="text" 
+				class="input-inner" 
+				:placeholder="placeholder" 
+				@click="handleClick">
+		</div>
+		<Calendar :visible="pickerVisible"></Calendar>
+	</section>
 </template>
 <script>
 	import Calendar from './calendar'
@@ -27,7 +30,7 @@
 		},
 		methods: {
 			handleClick() {
-
+				this.pickerVisible = true;
 			}
 		},
 
