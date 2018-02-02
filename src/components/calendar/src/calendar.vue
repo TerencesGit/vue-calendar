@@ -2,11 +2,11 @@
 	<section>
 		<div class="price-calendar">
 			<div class="calendar-month">
-				<span class="month-prev" @click="handlePrev"><i>&lt;</i></span>
+				<span class="month-prev" @click="handlePrev"><i v-show="isMonthPrev">&lt;</i></span>
 				<strong>
 					{{this.year}} 年 {{this.month + 1}} 月
 				</strong>
-				<span class="month-next" @click="handleNext"><i>&gt;</i></span>
+				<span class="month-next" @click="handleNext"><i v-show="isMonthNext">&gt;</i></span>
 			</div>
 			<table cellspacing="0" class="calendar-table">
 				<thead class="calendar-week">
@@ -40,6 +40,12 @@
         validator: val => val >= 0 && val <= 6
 			},
 			selectedDay: {
+				type: String, 
+			},
+			startDate: {
+				type: String, 
+			},
+			endDate: {
 				type: String, 
 			},
 			data: {
@@ -112,26 +118,19 @@
 						this.$set(row, j, cell);
 					}
 				}
-				this.data.length !== 0 && this.renderData(rows)
+				this.data.length > 0 && this.renderData(rows)
 				return rows;
 			},
-			dateRange() {
-				return {
-					startDate: this.data[0] && this.data[0].date,
-					endDate: this.data[0] && this.data[this.data.length - 1].date,
-				}
-			},
 			isMonthPrev() {
-				if(!this.data[0]) return true;
-				return this.year > new Date().getFullYear() || 
-				(this.year === new Date().getFullYear() && 
-					this.month > new Date().getMonth())
+				let startDate = this.startDate ? new Date(this.startDate) : new Date();
+				return this.year > startDate.getFullYear() || (this.year === startDate.getFullYear() && 
+					this.month > startDate.getMonth())
 			},
 			isMonthNext() {
-				if(!this.data[0])return true;
-				return this.year < new Date(this.data[this.data.length - 1].skuDate).getFullYear() || 
-							 (this.year === new Date(this.data[this.data.length - 1].skuDate).getFullYear() &&
-							 	this.month < new Date(this.data[this.data.length - 1].skuDate).getMonth())
+				if(!this.endDate) return false;
+				let endDate = new Date(this.endDate);
+				return this.year < endDate.getFullYear() || (this.year === endDate.getFullYear() &&
+							 	this.month < endDate.getMonth())
 			},
 		},
 		data() {
@@ -202,6 +201,7 @@
 </script>
 <style scoped lang="scss">
 	.price-calendar {
+		background: #fff;
 		border: 1px solid #ccc;
 		.calendar-month {
 			display: flex;
@@ -259,13 +259,20 @@
 					white-space: nowrap;
 					text-overflow: ellipsis;
 				}
+				.price {
+					color: #c60c1a;
+				}
 				&.prev-month, &.next-month {
+					background: #fcfcfc;
 					.day {
 						color: #b0b0b0;
 					}
 				}
 				&.disabled {
 					cursor: not-allowed;
+					span {
+						color: #999;
+					}
 				}
 				&.more {
 					.stock-status {

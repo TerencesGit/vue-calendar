@@ -6,11 +6,11 @@
 			<price-calendar 
 				:data="skuData"
 				:firstDayOfWeek="0"
-				:selectedDay="selectedDay"
+				:endDate="endDate"
+				:selectedDay="selectedDay" 
 				@dayClick="dayClick"
 				@prevMonth="handlePrevMonth"
-				@nextMonth="handleNextMonth"
-				>
+				@nextMonth="handleNextMonth">
 			</price-calendar>
 		</div>
 	</section>
@@ -22,6 +22,8 @@
 			return {
 				selectedDay: '',
 				skuData: [],
+				startDate: '',
+				endDate: '',
 				events: [
 					{
 						date: '2017-12-16',
@@ -73,13 +75,16 @@
 						date,
 					}
 				}).then(res => {
+					console.log(res)
 						if(res.data.status === 1) {
-							res.data.data.splice(0, date)
-							let skuData = res.data.data;
-							skuData.map(d => d.skuDate).sort((a, b) => {
-								return a > b;
-							})
-							this.skuData = skuData;
+							// res.data.data.currentMonthSku.splice(0, date)
+							this.skuData = res.data.data.currentMonthSku;
+							this.endDate = res.data.data.sellSkuPeriod.maxDate;
+							// let  = res.data.data.currentMonthSku;
+							// skuData.map(d => d.skuDate).sort((a, b) => {
+							// 	return a > b;
+							// })
+							// this.skuData = skuData;
 						}
 					}).catch(err => {
 						console.log(err)
@@ -92,7 +97,7 @@
 			// }))
 		},
 		created() {
-			this.getSkuData(12345, 2)
+			// this.getSkuData(12345, 2)
 		}
 	}
 </script>
